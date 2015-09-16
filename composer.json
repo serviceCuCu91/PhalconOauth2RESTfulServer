@@ -1,0 +1,9 @@
+{
+    "require": {
+        "league/oauth2-server": "^4.1",
+        "rych/otp": "^1.1"
+    },
+	"require-dev": {
+		"phalcon/devtools": "^2.0"
+    }
+}

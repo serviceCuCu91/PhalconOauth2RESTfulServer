@@ -1,2 +1,6 @@
 /cache/
 /config/development/
+/.svn/
+/vendor/
+composer.lock
+PhalconOauth2.clpprj
