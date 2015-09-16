@@ -131,7 +131,7 @@ $app->get('/resource/chat/{uuid:[0-9]+}/{tuuid:[0-9]+}/{startid:[0-9]+}', functi
 $app->get('/resource/chat/{uuid:[0-9]+}/{startid:[0-9]+}', function($uuid,$startid) use($app) 
 {
 	$waitForSecond = function() {		
-		usleep(800000);//0.8 second //usleep(600000);//0.6 second
+		usleep(2000000);//0.8 second //usleep(600000);//0.6 second
 		return true;
 	};
 		
@@ -150,7 +150,7 @@ $app->get('/resource/chat/{uuid:[0-9]+}/{startid:[0-9]+}', function($uuid,$start
 			"limit"		=> "50",
 			"order"		=> "created_at DESC"
 			));
-		} while ( $counter < 30 && count($chatLog) < 1 && $waitForSecond() );//long polling: counter 40 === 0.6s x 40 = 24 second
+		} while ( $counter < 12 && count($chatLog) < 1 && $waitForSecond() );//long polling: counter 40 === 0.6s x 40 = 24 second
 			
 		if( $chatLog==true)
 			$app->sfunc->jsonOutput($app, $chatLog->toArray());
