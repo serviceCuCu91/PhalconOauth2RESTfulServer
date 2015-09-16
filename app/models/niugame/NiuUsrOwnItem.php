@@ -5,7 +5,7 @@ class NiuUsrOwnItem extends \Phalcon\Mvc\Model
 {
 	public function initialize()
     {
-        $this->setSource('UsrOwnItem');
+        $this->setSource('usrownitem');
         $this->setConnectionService('niuniudb');
         
         $this->belongsTo("id", "NiuUsrInfo", "id");

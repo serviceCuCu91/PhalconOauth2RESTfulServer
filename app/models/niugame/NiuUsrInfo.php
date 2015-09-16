@@ -7,7 +7,7 @@ class NiuUsrInfo extends \Phalcon\Mvc\Model
 {
 	public function initialize()
     {
-        $this->setSource('UsrInfo');
+        $this->setSource('usrunfo');
         $this->setConnectionService('niuniudb');
         
         $this->hasOne("id", "NiuCharAttribute", "id");

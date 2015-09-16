@@ -3,7 +3,7 @@ class Origin extends \Phalcon\Mvc\Model
 {
 	public function initialize()
     {
-        $this->setSource('Origin');
+        $this->setSource('origin');
         //$this->setConnectionService('db');
         
         $this->hasMany("id", "ChatLogs", "og");

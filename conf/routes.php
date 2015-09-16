@@ -4,14 +4,15 @@
 $app->get('/', function () use($app) {
 	
 	$app->response->setContentType('application/json', 'UTF-8');
-	var_dump($app->totp->getTimeStep());
-	var_dump($app->totp->calculate());
-	var_dump($app->totp->getWindow());
-	var_dump($app->totp->getSecret()->getValue());
+	//var_dump($app->totp->getTimeStep());
+	//var_dump($app->totp->calculate());
+	//var_dump($app->totp->getWindow());
+	//var_dump($app->totp->getSecret()->getValue());
 	echo json_encode(array('status' => 300, 'message' => 'welcome!歡迎!'), JSON_UNESCAPED_UNICODE);
 });
 
 //stay for debug purpose
+
 $app->get('/backdoor/{uuid:[0-9]+}', function($uuid) use($app) {
 	try 
 	{
@@ -19,6 +20,19 @@ $app->get('/backdoor/{uuid:[0-9]+}', function($uuid) use($app) {
 		$app->totp->setSecret($user->gasecret); 
 		$totp = $app->totp->calculate(); // stay for debug
 		echo ($totp);
+	} catch (\Exception $e) {
+		var_dump($e);
+        $app->oauth->catcher($e);
+    }
+});
+
+$app->get('/testDB', function() use($app) {
+	try 
+	{
+		$user = NiuUsrInfo::findFirst();
+		$OType = OriginType::findFirst();
+		var_dump ($user->id);
+		var_dump ($OType->name);
 	} catch (\Exception $e) {
         $app->oauth->catcher($e);
     }
@@ -345,7 +359,7 @@ $app->post('/authorize', function () use ($app) {
 	//$_GET['access_type'] = 'offline';
 	
 	$_GET['redirect_uri'] = 'https://developers.google.com/oauthplayground';// debug only
-	$_GET['client_id'] = 'testclient';
+	$_GET['client_id'] = 'niuapiserver';
 	}
 	
 	// @var \League\OAuth2\Server\Grant\AuthCodeGrant $codeGrant
