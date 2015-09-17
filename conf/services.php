@@ -42,7 +42,7 @@ $di->set('url', function () use ($config)
  * Database connection is created based in the parameters defined in the configuration file
  */
 
-$di->set('niuniudb', function () use ($config) 
+$di->setShared('niuniudb', function () use ($config) 
 {
     return new MysqlPdo(
         array(
@@ -56,7 +56,7 @@ $di->set('niuniudb', function () use ($config)
 });
 
 // the main db for oauth token/ client
-$di->set('db', function () use ($config) 
+$di->setShared('db', function () use ($config) 
 {
     return new MysqlPdo(
         array(
