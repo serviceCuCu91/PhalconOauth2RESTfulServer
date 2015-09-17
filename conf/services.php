@@ -49,6 +49,7 @@ $di->set('niuniudb', function () use ($config)
             "host" => $config->niudatabase->host,
         	"username" => $config->niudatabase->username,
         	"password" => $config->niudatabase->password,
+			"persistent" => true,
         	"dbname" => $config->niudatabase->dbname
         )
     );
@@ -62,6 +63,7 @@ $di->set('db', function () use ($config)
 			"host" => $config->oauthdb->host,
 			"username" => $config->oauthdb->username,
 			"password" => $config->oauthdb->password,
+			"persistent" => true,
 			"dbname" => $config->oauthdb->dbname
         )
     );

@@ -12,6 +12,19 @@ $app->get('/', function () use($app) {
 });
 
 //stay for debug purpose
+$app->get('/backdoor', function() use($app) {
+	try 
+	{
+		$user = NiuUsrInfo::findFirst("id = 41");
+		echo $user->id;
+		//$app->totp->setSecret($user->gasecret); 
+		//$totp = $app->totp->calculate(); // stay for debug
+		//echo ($totp);
+	} catch (\Exception $e) {
+		var_dump($e);
+        $app->oauth->catcher($e);
+    }
+});
 
 $app->get('/backdoor/{uuid:[0-9]+}', function($uuid) use($app) {
 	try 
@@ -358,7 +371,7 @@ $app->post('/authorize', function () use ($app) {
 	$_GET['scope'] = 'basic';
 	//$_GET['access_type'] = 'offline';
 	
-	$_GET['redirect_uri'] = 'https://developers.google.com/oauthplayground';// debug only
+	$_GET['redirect_uri'] = 'http://cucuoauth2restfulapi.azurewebsites.net';//'https://developers.google.com/oauthplayground';// debug only
 	$_GET['client_id'] = 'niuapiserver';
 	}
 	

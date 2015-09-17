@@ -4,7 +4,7 @@ class NiuCharAttribute extends \Phalcon\Mvc\Model
 {
 	public function initialize()
     {
-        $this->setSource('CharAttribute');
+        $this->setSource('charattribute');
         $this->setConnectionService('niuniudb');
         
         $this->belongsTo("uuid", "NiuUsrInfo", "id");

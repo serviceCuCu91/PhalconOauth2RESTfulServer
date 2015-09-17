@@ -4,7 +4,7 @@ class NiuBankRecord extends \Phalcon\Mvc\Model
 {
 	public function initialize()
     {
-        $this->setSource('BankRecord');
+        $this->setSource('bankrecord');
         $this->setConnectionService('niuniudb');
         
         $this->belongsTo("uuid", "NiuUsrInfo", "id");

@@ -18,7 +18,10 @@ try {
 	/**
 	 * Read the configuration
 	 */
-	$config = include __DIR__.'/../conf/config.php';
+	if(!file_exists(__DIR__.'/../conf/config.deploy.php'))
+		$config = include __DIR__.'/../conf/config.php';
+	else
+		$config = include __DIR__.'/../conf/config.deploy.php';
 	
 	/**
 	 * Include loader
