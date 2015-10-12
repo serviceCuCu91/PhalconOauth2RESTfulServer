@@ -26,7 +26,7 @@ class FunctionPlugin extends Plugin
 	function getUUIDbyAccessToken($app)
 	{
 		$AccessToken = $app->oauth->resource->getAccessToken();
-		var_dump($AccessToken);
+		//var_dump($AccessToken);
 		$SessionStorage = $app->oauth->resource->getSessionStorage();
 		//var_dump($SessionStorage);
 		$OwnerID = $SessionStorage->getOwnIDByAccessToken($AccessToken);
