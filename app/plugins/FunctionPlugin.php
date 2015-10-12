@@ -8,15 +8,40 @@ class FunctionPlugin extends Plugin
 {
 	function isValidUUID($app, $uuid)
 	{
-		$ownerid = $app->sfunc->getUUIDbyAccessToken($app);	
+		//$ownerid = $this->getUUIDbyAccessToken($app);
+		$ownerid = $app->sfunc->getUUIDbyAccessToken($app);
 		if($ownerid != $uuid)
-			$app->sfunc->badRequest400($app);
+			$this->badRequest400($app);
+	}
+	
+	function isValidPurchase($targetItem, $user, $app)
+	{
+		if( $targetItem->cashCost > 0 && $user->cash < $targetItem->cashCost)
+			$this->badRequest400($app, "NotEnoughCash");
+		
+		if($targetItem->diamondCost > 0 && $user->diamond < $targetItem->diamondCost )
+			$this->badRequest400($app, "NotEnoughDiamond");
 	}
 	
 	function getUUIDbyAccessToken($app)
 	{
 		$AccessToken = $app->oauth->resource->getAccessToken();
-		return $app->oauth->resource->getSessionStorage()->getOwnIDByAccessToken($AccessToken);
+		var_dump($AccessToken);
+		$SessionStorage = $app->oauth->resource->getSessionStorage();
+		//var_dump($SessionStorage);
+		$OwnerID = $SessionStorage->getOwnIDByAccessToken($AccessToken);
+		//var_dump($OwnerID);
+		return $OwnerID;
+	}
+	
+	function getCST()
+	{
+		return date("Y-m-d H:i:s");
+	}
+	
+	function getGMT()
+	{
+		return gmdate("Y-m-d H:i:s");
 	}
 	
 	function getContentTypeFromPost()
@@ -50,6 +75,14 @@ class FunctionPlugin extends Plugin
 		return $app->totp->validate($totp);
 	}
 
+	function notModified304($app)
+	{
+		$app->response->setContentType('application/json', 'UTF-8')
+		->setStatusCode(304, "Not Modified")->sendHeaders();
+		echo json_encode(array('status' => 304));
+		exit();
+	}
+	
 	function notFunction404($app)
 	{
 		$app->response->setContentType('application/json', 'UTF-8')

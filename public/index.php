@@ -54,6 +54,9 @@ try {
 	$app->setDi($di);
 	
 	include __DIR__ . '/../conf/routes.php';
+	include __DIR__ . '/../conf/chat/routes.php';
+	include __DIR__ . '/../conf/niu/routes.php';
+	
 	//$app->setEventsManager($eventManager);
 	/**
 	 * Handle the request

@@ -49,8 +49,14 @@ $di->setShared('niuniudb', function () use ($config)
             "host" => $config->niudatabase->host,
         	"username" => $config->niudatabase->username,
         	"password" => $config->niudatabase->password,
-			"persistent" => true,
+			//"persistent" => true,
         	"dbname" => $config->niudatabase->dbname
+			//using SSL 
+			/*,
+			"options" => array(
+				PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES \'UTF8\'",
+				PDO::MYSQL_ATTR_SSL_CA => "/path/to/ca"
+			)*/
         )
     );
 });
@@ -63,50 +69,64 @@ $di->setShared('db', function () use ($config)
 			"host" => $config->oauthdb->host,
 			"username" => $config->oauthdb->username,
 			"password" => $config->oauthdb->password,
-			"persistent" => true,
+			//"persistent" => true,
 			"dbname" => $config->oauthdb->dbname
+			//using SSL 
+			/*,
+			"options" => array(
+				PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES \'UTF8\'",
+				PDO::MYSQL_ATTR_SSL_CA => "/path/to/ca"
+			)*/
         )
     );
 });
 
-$di->setShared('oauthredis', function ($config) 
+$di->setShared('oauthredis', function() use ($config) 
 {
-    $redis = new BackendRedis(new Phalcon\Cache\Frontend\Json(array(	"lifetime" => 1800, 'prefix' => 'accTok_.')), 
+    $redis = new BackendRedis(
+	new Phalcon\Cache\Frontend\Json(
+			array(	"lifetime" => 1800)//30 mins
+		),
+		array(
+			'host' => $config->redis->host,
+			'port' => $config->redis->port,
+			'auth' => $config->redis->auth,
+			'index' => 0,
+			'persistent' => false
+		)
+	); 	
+ 	return $redis;
+});
+
+$di->setShared('oauthcode', function() use ($config)  
+{
+    $redis = new BackendRedis(new Phalcon\Cache\Frontend\Json(array(	"lifetime" => 1800)), 
     array(
 	    'host' => $config->redis->host,
 	    'port' => $config->redis->port,
-	    //'auth' => $config->redis->auth,
+	    'auth' => $config->redis->auth,
 	    'index' => 1,
 	    'persistent' => false
  	)); 	
  	return $redis;
 });
 
-$di->setShared('oauthcode', function ($config) 
+$di->setShared('oauthtoken', function() use ($config) 
 {
-    $redis = new BackendRedis(new Phalcon\Cache\Frontend\Json(array(	"lifetime" => 1800, 'prefix' => 'accTok_.')), 
+    $redis = new BackendRedis(new Phalcon\Cache\Frontend\Json(array(	"lifetime" => 3600)), 
     array(
 	    'host' => $config->redis->host,
 	    'port' => $config->redis->port,
-	    //'auth' => $config->redis->auth,
+	    'auth' => $config->redis->auth,
 	    'index' => 2,
 	    'persistent' => false
  	)); 	
  	return $redis;
 });
 
-$di->setShared('oauthtoken', function ($config) 
-{
-    $redis = new BackendRedis(new Phalcon\Cache\Frontend\Json(array(	"lifetime" => 1800, 'prefix' => 'accTok_.')), 
-    array(
-	    'host' => $config->redis->host,
-	    'port' => $config->redis->port,
-	    //'auth' => $config->redis->auth,
-	    'index' => 1,
-	    'persistent' => false
- 	)); 	
- 	return $redis;
-});
+
+
+
 // </editor-fold>
 
 

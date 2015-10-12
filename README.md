@@ -9,4 +9,5 @@ Developed on
 | league/oauth2-server | 4.1.3 |
 | phalconphp.com | 2.0.7 |
 | php | 5.6 |
+| php_redis | 2.2.7 |
 
