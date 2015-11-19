@@ -18,6 +18,8 @@ class NiuCharAttribute extends \Phalcon\Mvc\Model
     public $handwear;
     public $icon;
     public $customicon;
+    
+    public $cardback;
     public $background;
     
     public $create_at;

@@ -10,10 +10,12 @@ class NiuUsrInfo extends \Phalcon\Mvc\Model
         $this->setSource('usrinfo');
         $this->setConnectionService('niuniudb');
         
-        $this->hasOne("id", "NiuCharAttribute", "id");
-        $this->hasMany("id", "NiuBankRecord", "uuid");
+        $this->hasOne("id", "NiuCharAttribute", "id");        
         $this->hasOne("id", "NiuBankRecord", "uuid");
         $this->hasOne("id", "NiuUsrOwnItem", "id");
+		
+		$this->hasMany("id", "NiuBankRecord", "uuid");
+		$this->hasMany("id", "NiuTransferableItem", "ownerUUID");
     }
     
 
@@ -32,6 +34,7 @@ class NiuUsrInfo extends \Phalcon\Mvc\Model
     
     public $created_at;
     public $updated_at;
+    public $flag;
     public $usrStatus;
     
     public function columnMap()
@@ -52,6 +55,7 @@ class NiuUsrInfo extends \Phalcon\Mvc\Model
             'diamond' => 'diamond',
             'created_at' => 'created_at',
             'updated_at' => 'updated_at',
+            'flag' => 'flag',
             'usrStatus' => 'usrStatus',
         );
     }
@@ -123,9 +127,11 @@ class NiuUsrInfo extends \Phalcon\Mvc\Model
     
 	public function afterFetch()
     {
-        // Convert the string to an array
-		$this->cash = (int)$this->cash;
-		$this->diamond = (int)$this->diamond;
+        // Convert the string to int(wont work)
+		//$this->cash = (int)$this->cash;
+		//$this->diamond = (int)$this->diamond;
+		
+		// Convert the string to an array
         $this->usrStatus = $this->convertStringToStrArray($this->usrStatus);
     }
     

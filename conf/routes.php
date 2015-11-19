@@ -1,20 +1,20 @@
 <?php
 
-
 $app->get('/', function () use($app) {
 	
 	$app->response->setContentType('application/json', 'UTF-8');
+	/*
 	if(!$app->oauthredis->exists(':AuthCode:51'))
 		$app->oauthredis->save(':AuthCode:51', 'gsdfdsasdsdfewrewfddsfsd');
 	
 	$data = $app->oauthredis->get(':AuthCode:51');
-	
+	*/
 	echo json_encode(
 		array(
 			'status' => 200, 
 			'NiuServer' => NiuUsrInfo::findFirst()->id,
 			'OauthServer' => ChatLogs::findFirst()->id,
-			'redis' => $data,
+			//'redis' => $data,
 			'message' => 'welcome!歡迎!'
 	), JSON_UNESCAPED_UNICODE);
 });
@@ -112,7 +112,7 @@ $app->post('/authorize', function () use ($app) {
 	
 	//$_GET['redirect_uri'] = 'http://cucuoauth2restfulapi.azurewebsites.net';
 	$_GET['redirect_uri'] = 'https://developers.google.com/oauthplayground';// debug only
-	$_GET['client_id'] = 'niuapiserver';
+	$_GET['client_id'] = 'testclient'; //'niuapiserver'; // 'testclient';
 	}
 	
 	// @var \League\OAuth2\Server\Grant\AuthCodeGrant $codeGrant
@@ -128,8 +128,6 @@ $app->post('/authorize', function () use ($app) {
         return $app->oauth->catcher($e);
     }
 	
-	//if( isset($_POST['db']) )
-	//	$targetDB = $_POST['db'];
 	$targetDB = ( isset($_POST['db']) ) ? $_POST['db']: 'default' ;
 	
 	if( isset($_POST['uuid']) )
@@ -150,11 +148,10 @@ $app->post('/authorize', function () use ($app) {
 	}
 	
 	$app->totp->setSecret($user->gasecret);
-	
-    if ( 
-    $app->sfunc->totpVerifition($app, $user->gasecret, $totp) &&
-    $authParams) {
-		
+	// var_dump( $app->sfunc->totpVerifition($app, $user->gasecret, $totp) );
+	// var_dump( $authParams );
+    if ( $app->sfunc->totpVerifition($app, $user->gasecret, $totp) && $authParams) 
+	{		
         $redirectUri = $codeGrant->newAuthorizeRequest( $targetDB, $myUUID, $authParams);
         $app->response->redirect($redirectUri,true)->sendHeaders();
     }

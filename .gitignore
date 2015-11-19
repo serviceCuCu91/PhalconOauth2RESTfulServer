@@ -4,3 +4,5 @@
 /vendor/
 composer.lock
 PhalconOauth2.clpprj
+*.crt
+conf/config.deploy.php

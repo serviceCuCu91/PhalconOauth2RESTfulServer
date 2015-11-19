@@ -30,7 +30,9 @@ class AuthCode implements AuthCodeInterface
     public function get($code)
     {
         $result = $this->db->fetchAll(
-            "SELECT * FROM oauth_auth_codes WHERE auth_code = :acode AND expire_time >= :etime",
+            "SELECT * 
+			FROM oauth_auth_codes 
+			WHERE auth_code = :acode AND expire_time >= :etime",
             Db::FETCH_ASSOC,
             array("acode" => $code, "etime" => time())
         );
@@ -74,7 +76,9 @@ class AuthCode implements AuthCodeInterface
     public function getScopes(AuthCodeEntity $token)
     {
         $result = $this->db->fetchAll(
-            "SELECT os.id, os.description FROM oauth_auth_code_scopes oacs JOIN oauth_scopes os ON oacs.scope = os.id WHERE auth_code =?",
+            "SELECT os.id, os.description 
+			FROM oauth_auth_code_scopes oacs JOIN oauth_scopes os ON oacs.scope = os.id 
+			WHERE auth_code =?",
             Db::FETCH_ASSOC,
             [$token->getId()]
         );

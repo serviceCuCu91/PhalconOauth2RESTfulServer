@@ -80,15 +80,10 @@ class NiuGameSetting extends \Phalcon\Mvc\Model
 				return (string)$this->value;
 			break;
 			case "Niu_CashCardSet":
-				return $this->convertArrayToString($this->value);
-			break;
 			case "Niu_CashSet":
-				return $this->convertArrayToString($this->value);
-			break;
 			case "Niu_DiamondSet":
-				return $this->convertArrayToString($this->value);
-			break;
 			case "Niu_BettingSet":
+			case "Niu_JackpotReturnRate":
 				return $this->convertArrayToString($this->value);
 			break;
 			default:
@@ -104,23 +99,18 @@ class NiuGameSetting extends \Phalcon\Mvc\Model
 				$this->value = (int)$this->value;
 			break;
 			case "Niu_CashCardSet":
-				$this->value = $this->convertStringToIntArray($this->value);
-			break;
 			case "Niu_CashSet":
-				$this->value = $this->convertStringToIntArray($this->value);
-			break;
 			case "Niu_DiamondSet":
-				$this->value = $this->convertStringToIntArray($this->value);
-			break;
 			case "Niu_BettingSet":
+			case "Niu_JackpotReturnRate":
 				$this->value = $this->convertStringToIntArray($this->value);
-			break;
+			break;			
 			default:
 			break;
 		}
     }
 
-	public function convertArrayToString( $arrInput )
+	public function convertArrayToString( $arrInput, $firstSep = '_', $SecondSep = ',' )
 	{
 		$stringResult;
 		
@@ -129,26 +119,34 @@ class NiuGameSetting extends \Phalcon\Mvc\Model
 			//$keys = array_keys($arrInput);
 			for($i=0; $i < count($arrInput); $i++ )
 			{
-				$stringArray[$i] = implode(",", $arrInput[$i]);
+				$stringArray[$i] = implode($SecondSep, $arrInput[$i]);
 			}
-			$stringResult = implode(".", $stringArray);
+			$stringResult = implode($firstSep, $stringArray);
 		}
 		else
 		{
-			$stringResult = implode(",", $arrInput);
+			$stringResult = implode($SecondSep, $arrInput);
 		}
 		return $stringResult;
 	}
 	
-	public function convertStringToIntArray($strInput)
+	public function convertStringToIntArray($strInput, $firstSep = '_', $SecondSep = ',')
 	{
-		$stringArray = explode(".", $strInput, 6);
+		// $strInput contains no "second seperator", example: $strInput = 1_2_3_5 => (1,2,3,5)
+		if(strpos($strInput, $SecondSep) == false)
+		{
+			$keyvalue = array_map( 'intval', explode($firstSep, $strInput) );
+			return array_slice($keyvalue, 0);
+		}
+		
+		//first element does contain "second seperator", example: $strInput = 1,3,5_2,4,6_3,6,9 => { (1,3,5),(2,4,6),(3,6,9)}		
+		$stringArray = explode($firstSep, $strInput, 6);
 		for($i=0; $i < count($stringArray); $i++)
 		{
-			$keyvalue = array_map('intval', explode(',', $stringArray[$i]));
-			//$returnArray[$keyvalue[0]] = array_slice($keyvalue,1);
-			$returnArray[$i] = array_slice($keyvalue,0);
-		}		
+			$keyvalue = array_map( 'intval', explode( $SecondSep, $stringArray[$i] ) );
+			$returnArray[$i] = array_slice($keyvalue, 0);
+		}
+		
 		return $returnArray;
 	}
 }

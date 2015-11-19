@@ -6,7 +6,7 @@ return new \Phalcon\Config(array(
         'host'       => 'localhost',
         'username'   => 'oauthapi',
         'password'   => 'oauthapi',
-        'dbname'     => 'oauthapi'
+        'dbname'     => 'sumeko'
     ),
     
     'niudatabase' => array(
