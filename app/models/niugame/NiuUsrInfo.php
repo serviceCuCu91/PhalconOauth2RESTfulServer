@@ -10,6 +10,7 @@ class NiuUsrInfo extends \Phalcon\Mvc\Model
         $this->setSource('usrinfo');
         $this->setConnectionService('niuniudb');
         
+        //UsrInfo is the master record, it belongs to NO ONE!!!
         $this->hasOne("id", "NiuCharAttribute", "id");        
         $this->hasOne("id", "NiuBankRecord", "uuid");
         $this->hasOne("id", "NiuUsrOwnItem", "id");
@@ -128,14 +129,14 @@ class NiuUsrInfo extends \Phalcon\Mvc\Model
 	public function afterFetch()
     {
         // Convert the string to int(wont work)
-		//$this->cash = (int)$this->cash;
-		//$this->diamond = (int)$this->diamond;
+		$this->cash = (int)$this->cash;
+		$this->diamond = (int)$this->diamond;
 		
 		// Convert the string to an array
         $this->usrStatus = $this->convertStringToStrArray($this->usrStatus);
     }
     
-    public function convertArrayToInt( $arrInput)
+    public function convertArrayToInt( $arrInput )
 	{
 		return bindec(strrev(implode($arrInput)));
 	}

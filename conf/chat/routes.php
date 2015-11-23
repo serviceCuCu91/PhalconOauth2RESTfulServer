@@ -113,7 +113,7 @@ $app->get('/resource/niugift/{uuid:[0-9]+}/{startid:[0-9]+}', function($uuid,$st
 		// Check that an access token is present and is valid
 		$app->oauth->resource->isValidRequest();
 		
-		$thisTime = "'" . $app->sfunc->getCST() . "'";// use ' to quote the time string
+		$thisTime = "'" . $app->sfunc->getGMT() . "'";// use ' to quote the time string
 		
 		$gBoxEntries = GiftBox::find(
 		array(
@@ -141,7 +141,7 @@ $app->get('/resource/niugift/{uuid:[0-9]+}/{startid:[0-9]+}', function($uuid,$st
     }
 });
 
-
+//user tell the server that he/she want to actually retrieve those gifts in the specific mails
 $app->post('/resource/niugift/retrieve/{uuid:[0-9]+}', function($uuid) use($app) 
 {
 	$inputs = $app->sfunc->getContentTypeFromPost();
@@ -159,18 +159,16 @@ $app->post('/resource/niugift/retrieve/{uuid:[0-9]+}', function($uuid) use($app)
 		//get and check the user id by AccessToken
 		$app->sfunc->isValidUUID($app, $uuid);
 		
-		$thisTime = "'" . $app->sfunc->getCST() . "'";// use ' to quote the time string
+		$thisTime = "'" . $app->sfunc->getGMT() . "'";// use ' to quote the time string
 		$outputString = "";
 		$outputString2 = "";
+		
 		$thsUser = NiuUsrInfo::findFirst("id = " . $uuid);
 		
 		foreach($targets as $val)
-		
 		{
-			$gBoxEntry = //GiftBox::findFirst("id = " . $val . " AND targetid = " . $uuid. " AND expired_at > " . $thisTime);
-			GiftBox::findFirst(
-				array("conditions" => "id = $val AND targetid = $uuid AND expired_at > $thisTime"    //"id>$startid AND targetid=$uuid AND expired_at>$thisTime",
-			));
+			//GiftBox::findFirst("id = " . $val . " AND targetid = " . $uuid. " AND expired_at > " . $thisTime);
+			$gBoxEntry = GiftBox::findFirst( array( "conditions" => "id = $val AND targetid = $uuid AND expired_at > $thisTime" ));
 			
 			if(!$gBoxEntry)
 			{
@@ -180,38 +178,103 @@ $app->post('/resource/niugift/retrieve/{uuid:[0-9]+}', function($uuid) use($app)
 			
 			$giftContent = $app->sfunc->convertStringToIntArray( $gBoxEntry->json );//now we get int[,]
 			
-			//$giftContent[0][] is the type based on public enum NiuPurchaseType, 
-			//$giftContent[1][] is the index of the item, 
-			//$giftContent[2][] is the amount in general
-			for($i = 0; $i < count($giftContent); $i++)
+			//if giftContent[0] is not array
+			//$giftContent[0] is the type based on public enum NiuPurchaseType, 
+			//$giftContent[1] is the index of the item, used in cashcard/ eq
+			//$giftContent[2] is the amount in general, used in diamond/ cash
+			
+			//if giftContent[0] is array
+			//$giftContent[0][$i] is the type based on public enum NiuPurchaseType, 
+			//$giftContent[1][$i] is the index of the item, used in cashcard/ eq
+			//$giftContent[2][$i] is the amount in general, used in diamond/ cash
+			
+			if(is_array($giftContent[0]))
+				$giftAmount = count( $giftContent[0] );
+			else
+				$giftAmount = 1;
+			
+			for($i = 0; $i < $giftAmount; $i++)
 			{
-				switch($giftContent[0][$i])
+				if( $giftAmount > 1 )
 				{
-					case 0: //cashcard
-					//TODO:
+					$targetGiftType = $giftContent[0][$i];
+					$targetGiftIndex = $giftContent[1][$i];
+					$targetGiftAmount = $giftContent[2][$i];
+				}
+				else
+				{
+					$targetGiftType = $giftContent[0];
+					$targetGiftIndex = $giftContent[1];
+					$targetGiftAmount = $giftContent[2];
+				}
+				
+				switch($targetGiftType)
+				{
+					case 0: //cashcard					
+						$CashCardSet = NiuGameSetting::findFirst("gskey = 'Niu_CashCardSet'")->value;
+						//$DiamondCost = $CashCardSet[$targetGiftIndex][0];
+						$DepositMax = $CashCardSet[$targetGiftIndex][1];
+				
+						//giving a CashCard
+						$NTItem = new NiuTransferableItem();		
+						$NTItem->buyerUUID = (int)$uuid;
+						$NTItem->ownerUUID = (int)$uuid;
+						$NTItem->itemType = "cashcard";
+						$NTItem->maxDeposit = $DepositMax;
+						$NTItem->created_at = $app->sfunc->getGMT();
+						$NTItem->save();
+						
+						$bankRec = new NiuBankRecord();
+						$bankRec->uuid = (int)$uuid;
+						$bankRec->value = 0;	
+						$bankRec->usingDiamond = 0;
+						$bankRec->gcardid = $NTItem->id;
+						$bankRec->type = "InGameCashCard";//ingamecashcard
+						$bankRec->save();
 					break;
 					case 1: //diamond
-						$thsUser->diamond += $giftContent[2][$i];
+						$thsUser->diamond += $targetGiftAmount;
+						
+						//bank Record
+						$bankRec = new NiuBankRecord();
+						$bankRec->uuid = (int)$uuid;
+						$bankRec->usingCash = 0;
+						$bankRec->usingDiamond = 0;
+						$bankRec->value = $targetGiftAmount;
+						$bankRec->giftid = $val;
+						$bankRec->type = "Gift";//gift
+						$bankRec->save();
 					break;
 					case 2: //cash
-						$thsUser->cash += $giftContent[2][$i];
+						$thsUser->cash += $targetGiftAmount;
+						
+						//bank Record
+						$bankRec = new NiuBankRecord();
+						$bankRec->uuid = (int)$uuid;
+						$bankRec->usingCash = 0;
+						$bankRec->usingDiamond = 0;
+						$bankRec->value = $targetGiftAmount;
+						$bankRec->giftid = $val;
+						$bankRec->type = "Gift";//gift
+						$bankRec->save();
 					break;
 					case 3: //eq
-					break;
 					case 4: // TableBG
-					break;
-					case 5: // CardBack
+					case 5: // CardBack					
+						$thsUser->NiuUsrOwnItem->PurchaseByID( $targetGiftIndex );
+						//TODO: BankRecord? but there is no indicate about the gift content
 					break;
 					default:
 					break;
 				}
 			}
-			
 			$gBoxEntry->targetid = $gBoxEntry->targetid * -1;
 			$gBoxEntry->save();
 			
 			$outputString = $outputString . "," . $gBoxEntry->id;
 		}
+			
+		$thsUser->save();
 		
 		$app->sfunc->jsonOutput( $app, array( 'status' => 200, 'success' => trim($outputString, ","), 'fail' =>  trim($outputString2, ",") ) );
 	} 
@@ -245,7 +308,6 @@ $app->post('/resource/niugift/sendgift/{uuid:[0-9]+}', function($uuid) use($app)
 			$gBoxEntry = new GiftBox();
 		
 			$gBoxEntry->originid = $uuid;
-			$gBoxEntry->created_at = $app->sfunc->getCST();
 			$gBoxEntry->origintype = isset($inputs['ot']) ? $inputs['ot'] : "0";
 			$gBoxEntry->targettype = isset($inputs['tt']) ? $inputs['tt'] : "0";
 			
@@ -254,8 +316,9 @@ $app->post('/resource/niugift/sendgift/{uuid:[0-9]+}', function($uuid) use($app)
 				
 			if( isset($inputs['json']) )
 				$gBoxEntry->json = $inputs['json'];// example: 2_0_1000
-				
-			$gBoxEntry->expired_at = ( isset($inputs['expired']) ) ? $app->sfunc->getCST($inputs['expired']): $app->sfunc->getCST(259200);//3 day by default
+			
+			$gBoxEntry->created_at = $app->sfunc->getGMT();
+			$gBoxEntry->expired_at = ( isset($inputs['expired']) ) ? $app->sfunc->getGMT($inputs['expired']): $app->sfunc->getGMT(259200);//3 day by default
 			$gBoxEntry->targetid = $val;
 			$gBoxEntry->save();
 			$outputString = $outputString . "," . $gBoxEntry->id;

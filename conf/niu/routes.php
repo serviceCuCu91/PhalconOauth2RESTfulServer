@@ -45,20 +45,136 @@ $app->get('/resource/niu/cashcard/{uuid:[0-9]+}', function($uuid) use($app)
 	
 		$user = NiuUsrInfo::findFirst("id = $uuid");
 		
-		if( $user==true)
-		{
-			$CashCardSs = NiuTransferableItem::find(array(
-					"ownerUUID = $uuid AND itemType = 'cashcard'",
-					"order" => "maxDeposit",
-					"columns" => "id,buyerUUID,maxDeposit,nowDeposit"
-				));
+		if( !$user )
+			$app->sfunc->notFunction404($app, "UserNotFound");
+		
+		$CashCardSs = NiuTransferableItem::find(array(
+				"ownerUUID = $uuid AND itemType = 'cashcard'",
+				"order" => "maxDeposit",
+				"columns" => "id,buyerUUID,maxDeposit,nowDeposit"
+			));
+		
+		//whether there is a card (or not), always return (empty) array
+		$app->sfunc->jsonOutput($app, array('status' => 200, 'cashcards' => $CashCardSs->toArray()) );
+		
+	} catch (\Exception $e) {
+		//var_dump($e);
+        $app->oauth->catcher($e);
+    }
+});
 
-			$app->sfunc->jsonOutput($app, array('status' => 200, 'cashcards' => $CashCardSs->toArray()) );
-		}
-		else
-		{
-			$app->sfunc->badRequest400($app, "UserNotFound");
-		}
+//deposit into specific CashCard
+$app->post('/resource/niu/cashcard/{uuid:[0-9]+}/{targetdepositcard:[0-9]+}', function($uuid,$targetdepositcard) use($app)
+{
+	$inputs = $app->sfunc->getContentTypeFromPost();
+			
+	//check if parameter is present
+	if(!isset($inputs["depositvalue"]))
+		$app->sfunc->badRequest400($app, "DepositValueMissing");
+	$valueToDeposit = (int)$inputs["depositvalue"];
+	
+	//block the number when the number > 2,147,483,647
+	if( $valueToDeposit < 0 )
+		$app->sfunc->badRequest400($app, "InvalidDepositValue");
+	
+	//check if card exists/user does own the card
+	$card = NiuTransferableItem::findFirst(array("id = $targetdepositcard AND ownerUUID = $uuid AND itemType = 'cashcard'"));
+	if(!$card)
+		$app->sfunc->notFunction404($app, "CardNotFound");
+	
+	//make sure $valueToDeposit not exceed maxDeposit
+	$MaxPossibileDeposit = $card->maxDeposit - $card->nowDeposit;
+	if($MaxPossibileDeposit == 0)
+		$app->sfunc->badRequest400($app, "CardFilled");
+	
+	$valueToDeposit = min($valueToDeposit, $MaxPossibileDeposit);
+	
+	if($card->NiuUsrInfo->cash < $valueToDeposit)
+		$app->sfunc->badRequest400($app, "NotEnoughCash");
+	
+	try {
+		// Check that an access token is present and is valid
+		$app->oauth->resource->isValidRequest();
+			
+		//get and check the user id by AccessToken
+		$app->sfunc->isValidUUID($app, $uuid);
+		
+		//deduct cash amount from user
+		$card->NiuUsrInfo->cash -= $valueToDeposit;
+		
+		//add cash amount to the card
+		$card->nowDeposit += $valueToDeposit;
+		$card->save();
+		
+		//bank Record
+		$bankRec = new NiuBankRecord();
+		$bankRec->uuid = (int)$uuid;
+		$bankRec->usingCash = $valueToDeposit; // using/purchasing diamond
+		//$bankRec->ugid = -1; //outside game
+		$bankRec->value = -$valueToDeposit;	
+		$bankRec->usingDiamond = 0;
+		$bankRec->gcardid = $targetdepositcard; // knew the card number from the beginning
+		$bankRec->type = "InGameCashCard";//ingamecashcard
+		$bankRec->save();
+		
+		$app->sfunc->jsonOutput($app, array('status' => 200, 'cashdeposit' =>$valueToDeposit));
+		
+	} catch (\Exception $e) {
+		//var_dump($e);
+        $app->oauth->catcher($e);
+    }
+});
+
+//destroy my CashCard to be Someone's Gift
+$app->post('/resource/niu/cashcard/{uuid:[0-9]+}', function($uuid) use($app)
+{
+	$inputs = $app->sfunc->getContentTypeFromPost();
+			
+	//check if parameter is present
+	if(!isset($inputs["targetplayer"]))
+		$app->sfunc->badRequest400($app, "TargetPlayerMissing");
+	
+	if(!isset($inputs["giftcardid"]))
+		$app->sfunc->badRequest400($app, "GiftCardMissing");
+	
+	$giftID = (int)$inputs["giftcardid"];
+	
+	//check if card exists/user does own the card
+	$card = NiuTransferableItem::findFirst(array("id = $giftID AND ownerUUID = $uuid AND itemType = 'cashcard'"));
+	if(!$card)
+		$app->sfunc->notFunction404($app, "CardNotFound");
+	
+	//now create a CASH giftcontent in Text
+	$giftContent = "2_0_" . $card->nowDeposit;
+	
+	$targetPlayer = NiuUsrInfo::findFirst("id = " . (int)$inputs["targetplayer"]);
+	if(!$targetPlayer)
+		$app->sfunc->notFunction404($app, "TargetUserNotFound");
+	
+	try {
+		// Check that an access token is present and is valid
+		$app->oauth->resource->isValidRequest();
+			
+		//get and check the user id by AccessToken
+		$app->sfunc->isValidUUID($app, $uuid);		
+		
+		//send a gift to targetgift
+		$AGift = new GiftBox();
+		$AGift->originid = $uuid;
+		$AGift->origintype = 2;//niuniu
+		$AGift->targetid = $targetPlayer->id;
+		$AGift->targettype = 2;//niuniu
+		$AGift->content = "";
+		$AGift->json = $giftContent;
+		$AGift->created_at = $app->sfunc->getGMT();
+		$AGift->expired_at = ( isset($inputs['expired']) ) ? $app->sfunc->getGMT($inputs['expired']): $app->sfunc->getGMT(259200);//3 day by default
+		$AGift->save();
+		
+		//disable the cashcard
+		$card->ownerUUID = -$card->ownerUUID;
+		$card->save();
+		
+		$app->sfunc->jsonOutput($app, array('status' => 200));
 		
 	} catch (\Exception $e) {
 		//var_dump($e);
@@ -78,7 +194,7 @@ $app->post('/resource/niu/nicknamenation/{uuid:[0-9]+}', function($uuid) use($ap
 		
 	//$nname = $inputs["nickname"];
 	
-	if(NiuUsrInfo::findFirst("usrNickName=\"".$inputs["nickname"]."\""))
+	if(NiuUsrInfo::findFirst("usrNickName='" . $inputs["nickname"] . "'"))
 			$app->sfunc->badRequest400($app, "NicknameUsed");
 		
 	try {
@@ -87,7 +203,8 @@ $app->post('/resource/niu/nicknamenation/{uuid:[0-9]+}', function($uuid) use($ap
 		
 		//get and check the user id by AccessToken
 		$app->sfunc->isValidUUID($app, $uuid);
-	
+		
+		//find my player info
 		$user = NiuUsrInfo::findFirst("id = " . $uuid);
 		$user->usrNickName = $inputs["nickname"];
 		$user->flag = $inputs["nation"];
@@ -139,7 +256,7 @@ $app->post('/resource/niu/purchasebydiamond/{uuid:[0-9]+}', function($uuid) use(
 				$app->sfunc->badRequest400($app, "TransReceiptMissing");
 				
 			if(!isset($inputs["PurchaseAgency"]))
-				$app->sfunc->badRequest400($app, "AgencyMissing");
+				$app->sfunc->badRequest400($app, "AgentMissing");
 				
 			if($inputs["PurchaseAgency"] == "google" && !isset($inputs["RawPurchaseData"]))
 				$app->sfunc->badRequest400($app, "RawDataMissing");	
@@ -194,7 +311,7 @@ $app->post('/resource/niu/purchasebydiamond/{uuid:[0-9]+}', function($uuid) use(
 		$bankRec = new NiuBankRecord();
 		$bankRec->uuid = (int)$uuid;
 		$bankRec->usingCash = 0; // using/purchasing diamond
-		$bankRec->ugid = -1; //at store, outside game
+		//$bankRec->ugid = -1; //at store, outside game
 		
 		$OutPutArray = array('status' => 200);
 		
@@ -207,7 +324,8 @@ $app->post('/resource/niu/purchasebydiamond/{uuid:[0-9]+}', function($uuid) use(
 				$NTItem->ownerUUID = (int)$uuid;
 				$NTItem->itemType = "cashcard";
 				$NTItem->maxDeposit = $DepositMax;
-				$NTItem->created_at = $app->sfunc->getCST();
+				$NTItem->created_at = $app->sfunc->getGMT();
+				//$NTItem->updated_at = $app->sfunc->getGMT();//default GMT
 				$NTItem->save();
 				
 				$bankRec->value = -$DiamondCost;	
@@ -222,7 +340,7 @@ $app->post('/resource/niu/purchasebydiamond/{uuid:[0-9]+}', function($uuid) use(
 			
 				$bankRec->value = $CashDeposit;	
 				$bankRec->usingDiamond = $DiamondCost;
-				$bankRec->gcardid = -1;
+				//$bankRec->gcardid = -1;
 				$bankRec->type = "Deposit";				
 				$bankRec->save();
 				
@@ -231,21 +349,25 @@ $app->post('/resource/niu/purchasebydiamond/{uuid:[0-9]+}', function($uuid) use(
 			case "Diamond":
 				$bankRec->value = $DiamondCost;
 				$bankRec->usingDiamond = 0;
-				$bankRec->gcardid = -1;
+				//$bankRec->gcardid = -1;
 				$bankRec->type = "DiamondDeposit";
 				$bankRec->save();
+				
+				//TODO: insert/update the VIP record
 				
 				$Invoice = new NiuInvoiceRecord();
 				$Invoice->bankid = $bankRec->id;
 				$Invoice->uuid = (int)$uuid;
 				$Invoice->productID = $inputs["ProductIdentifier"];//string				
 				$Invoice->sType = $inputs["PurchaseAgency"];//string
+				//$Invoice->created_at = $app->sfunc->getGMT();// server default GMT
 				
 				//only android store return this info
 				if($Invoice->sType == "google")
 				{
 					$Invoice->rawData = $inputs["RawPurchaseData"];//string
 					//$Invoice->serverVerifyStatus = -1;
+					//TODO: android server side purchase verification
 				}
 				elseif($Invoice->sType == "apple")				
 				{
@@ -318,7 +440,8 @@ $app->post('/resource/niu/purchase/{uuid:[0-9]+}', function($uuid) use($app)
 	}
 	
 	if(!$targetItem)
-		$app->sfunc->badRequest400($app, "ItemNotFound");	
+		$app->sfunc->badRequest400($app, "ItemNotFound");
+	
 	$app->sfunc->isValidPurchase($targetItem, $user, $app);
 		
 	try {
@@ -338,8 +461,9 @@ $app->post('/resource/niu/purchase/{uuid:[0-9]+}', function($uuid) use($app)
 		$record->uuid = $uuid;
 		$record->usingDiamond = $targetItem->diamondCost;//int
 		$record->usingCash = $targetItem->cashCost;//int
-		$record->ugid = -1;//long?
-		$record->gcardid = -1;//long?
+		//$record->ugid = -1;//long?
+		//$record->gcardid = -1;//long?
+		//$record->created_at = $app->sfunc->getGMT();// server default GMT
 		$record->save();
 		
 		$app->sfunc->jsonOutput($app, array('status' => 200));
@@ -360,20 +484,15 @@ $app->get('/resource/niu/ucharattribute/{uuid:[0-9]+}', function($uuid) use($app
 		
 		$user = NiuUsrInfo::findFirst( "id=$uuid" );
 		
+		if( !$user)
+			$app->sfunc->notFunction404($app, "TargetUserNotFound");
+		
 		$resultArr["id"] = $user->id;
 		$resultArr["nn"] = $user->usrNickName; // nickname
 		$resultArr["na"] = $user->flag; // nation or flag
 		$resultArr["ic"] = $user->NiuCharAttribute->icon;
 		$resultArr["ci"] = $user->NiuCharAttribute->customicon;
-		
-		if( $user==true)
-		{
-			$app->sfunc->jsonOutput($app, array('status' => 200, 'puinfo' => $resultArr ));
-		}
-		else
-		{
-			$app->sfunc->forbidden403($app);
-		}
+		$app->sfunc->jsonOutput($app, array('status' => 200, 'puinfo' => $resultArr ));
 	} 
 	catch (\Exception $e) 
 	{

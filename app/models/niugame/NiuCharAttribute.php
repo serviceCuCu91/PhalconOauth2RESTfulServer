@@ -22,7 +22,7 @@ class NiuCharAttribute extends \Phalcon\Mvc\Model
     public $cardback;
     public $background;
     
-    public $create_at;
+    //public $create_at;
     public $updated_at;
     
     public function columnMap()
@@ -38,7 +38,7 @@ class NiuCharAttribute extends \Phalcon\Mvc\Model
             'customicon' => 'customicon',
             'cardback' => 'cardback',
             'background' => 'background',
-            'created_at' => 'created_at',
+            //'created_at' => 'created_at',
             'updated_at' => 'updated_at',
         );
     }

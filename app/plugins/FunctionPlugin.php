@@ -139,6 +139,17 @@ class FunctionPlugin extends Plugin
 		return $returnArray;
 	}
 	
+	public function setFromInputOrDefault($targetKey, $infoArray, $defaultValue)
+	{
+		var_dump( isset( $_GET[$targetKey] ) );
+		
+		if(!isset($_GET[$targetKey]))
+			if(!isset($infoArray[$targetKey]))
+				return $defaultValue;				
+			return $infoArray[$targetKey];
+		return $_GET[$targetKey];
+	}
+	
 	//return server time in CST
 	function getCST($assignedTime = null)
 	{
@@ -197,11 +208,14 @@ class FunctionPlugin extends Plugin
 		exit();
 	}
 	
-	function notFunction404($app)
+	function notFunction404($app, $reason = null)
 	{
 		$app->response->setContentType('application/json', 'UTF-8')
 		->setStatusCode(404, "Not Found")->sendHeaders();
-		echo json_encode(array('error' => 404, 'message' => "Resource Not Found"));
+		$output = array('error' => 404, 'message' => "Resource Not Found");
+		if($reason != null)
+			$output["reason"] = $reason;
+		echo json_encode($output);
 		exit();
 	}
 

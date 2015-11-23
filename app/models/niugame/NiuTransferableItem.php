@@ -1,15 +1,7 @@
 <?php
 
 class NiuTransferableItem extends \Phalcon\Mvc\Model
-{
-	public function initialize()
-    {
-        $this->setSource('transferableItem');
-        $this->setConnectionService('niuniudb');
-        
-        $this->belongsTo("ownerUUID", "NiuUsrInfo", "id");
-    }
-	
+{	
     public $id;
     public $buyerUUID;
     public $ownerUUID;
@@ -18,6 +10,14 @@ class NiuTransferableItem extends \Phalcon\Mvc\Model
     public $nowDeposit;
     public $created_at;
     public $updated_at;
+    
+	public function initialize()
+    {
+        $this->setSource('transferableItem');
+        $this->setConnectionService('niuniudb');
+        
+        $this->belongsTo("ownerUUID", "NiuUsrInfo", "id");
+    }
     
     public function columnMap()
     {
