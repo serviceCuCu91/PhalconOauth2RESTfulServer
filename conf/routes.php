@@ -9,14 +9,22 @@ $app->get('/', function () use($app) {
 	
 	$data = $app->oauthredis->get(':AuthCode:51');
 	*/
+	
+	$apiserverTime = date("Y-m-d H:i:s");
+	$modelAtNiuServer = new NiuUsrInfo();
+	$modelAtOauthServer = new ChatLogs();
+	
 	echo json_encode(
 		array(
 			'status' => 200, 
 			'NiuServer' => NiuUsrInfo::findFirst()->id,
 			'OauthServer' => ChatLogs::findFirst()->id,
 			//'redis' => $data,
-			'message' => 'welcome!歡迎!'
-	), JSON_UNESCAPED_UNICODE);
+			'message' => 'welcome!歡迎!',
+			'apiserverTime' => $apiserverTime,
+			'dbServerTime' => $modelAtNiuServer->getServerTime(),			
+			'authServerTime' => $modelAtOauthServer->getServerTime(),
+		), JSON_UNESCAPED_UNICODE);
 });
 
 

@@ -1,4 +1,6 @@
 <?php
+use Phalcon\Mvc\Model\Query;
+
 class ChatLogs extends \Phalcon\Mvc\Model
 {
 	public function initialize()
@@ -65,6 +67,16 @@ class ChatLogs extends \Phalcon\Mvc\Model
 			'json' => 'json',
 			'created_at' => 'created_at'
         );
+    }
+	
+	public function getServerTime()
+    {
+        // A raw SQL statement
+		$query = new Query('SELECT now() FROM NiuUsrInfo limit 1', $this->getDI());
+		
+        // Execute the query
+		$result = $query->execute();
+		return $result[0]->toArray()[0];
     }
 	 
 }

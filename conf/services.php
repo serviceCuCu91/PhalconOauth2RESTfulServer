@@ -50,13 +50,14 @@ $di->setShared('niuniudb', function () use ($config)
         	"username" => $config->niudatabase->username,
         	"password" => $config->niudatabase->password,
 			//"persistent" => true,
-        	"dbname" => $config->niudatabase->dbname
-			//using SSL 
-			/*,
+        	"dbname" => $config->niudatabase->dbname,
+			
+			//using SSL			
 			"options" => array(
-				PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES \'UTF8\'",
-				PDO::MYSQL_ATTR_SSL_CA => "/path/to/ca"
-			)*/
+				//PDO::MYSQL_ATTR_INIT_COMMAND => "SET TIME_ZONE='+08:00'",
+				//PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES \'UTF8\'",
+				//PDO::MYSQL_ATTR_SSL_CA => "/path/to/ca"
+			)
         )
     );
 });
@@ -70,31 +71,29 @@ $di->setShared('db', function () use ($config)
 			"username" => $config->oauthdb->username,
 			"password" => $config->oauthdb->password,
 			//"persistent" => true,
-			"dbname" => $config->oauthdb->dbname
+			"dbname" => $config->oauthdb->dbname,
+			
 			//using SSL 
-			/*,
 			"options" => array(
-				PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES \'UTF8\'",
-				PDO::MYSQL_ATTR_SSL_CA => "/path/to/ca"
-			)*/
+				//PDO::MYSQL_ATTR_INIT_COMMAND => "SET TIME_ZONE='+08:00'",
+				//PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES \'UTF8\'",
+				//PDO::MYSQL_ATTR_SSL_CA => "/path/to/ca",
+				//PDO::ATTR_CASE               => PDO::CASE_LOWER
+			)
         )
     );
 });
 
 $di->setShared('oauthredis', function() use ($config) 
 {
-    $redis = new BackendRedis(
-	new Phalcon\Cache\Frontend\Json(
-			array(	"lifetime" => 1800)//30 mins
-		),
-		array(
-			'host' => $config->redis->host,
-			'port' => $config->redis->port,
-			'auth' => $config->redis->auth,
-			'index' => 0,
-			'persistent' => false
-		)
-	); 	
+    $redis = new BackendRedis( new Phalcon\Cache\Frontend\Json(array(	"lifetime" => 1800)),//30 mins
+	array(
+		'host' => $config->redis->host,
+		'port' => $config->redis->port,
+		'auth' => $config->redis->auth,
+		'index' => 0,
+		'persistent' => false
+	)); 	
  	return $redis;
 });
 

@@ -161,10 +161,10 @@ $app->post('/resource/niu/cashcard/{uuid:[0-9]+}', function($uuid) use($app)
 		//send a gift to targetgift
 		$AGift = new GiftBox();
 		$AGift->originid = $uuid;
-		$AGift->origintype = 2;//niuniu
+		$AGift->origintype = 2; //niuniu
 		$AGift->targetid = $targetPlayer->id;
-		$AGift->targettype = 2;//niuniu
-		$AGift->content = "";
+		$AGift->targettype = 2; //niuniu
+		$AGift->content = ( isset( $inputs['content']) ) ? $inputs['content'] : "";
 		$AGift->json = $giftContent;
 		$AGift->created_at = $app->sfunc->getGMT();
 		$AGift->expired_at = ( isset($inputs['expired']) ) ? $app->sfunc->getGMT($inputs['expired']): $app->sfunc->getGMT(259200);//3 day by default
@@ -559,6 +559,33 @@ $app->post('/resource/niu/ucharattribute/{uuid:[0-9]+}/{target:[a-z]+}/{targetit
 		}
 	} catch (\Exception $e) {
 		//var_dump($e);
+        $app->oauth->catcher($e);
+    }
+});
+
+
+$app->get('/resource/niu/announcement', function() use($app) {
+
+	try {
+		// Check that an access token is present and is valid
+		//$app->oauth->resource->isValidRequest();//it is announcement... no need for security check
+		
+		$thisTime = "'" . $app->sfunc->getGMT() . "'";// use '' to quote the time string
+		
+		$announce = NiuAnnouncement::find(
+		array(
+		"conditions" => "InitiatedAt < $thisTime AND ExpiredAt > $thisTime",
+		"columns" => "ID as id,AnnouncementType as ty, AnnouncementTitle as ac,AnnouncementContent as ac, UrlToGo as ur",
+		"limit"		=> "10",
+		"order"		=> "ExpiredAt DESC"
+		));
+		
+		if( !$announce)
+			$app->sfunc->notModified304($app);
+
+		$app->sfunc->jsonOutput($app, $announce->toArray());
+	} catch (\Exception $e) {
+		var_dump($e);
         $app->oauth->catcher($e);
     }
 });
