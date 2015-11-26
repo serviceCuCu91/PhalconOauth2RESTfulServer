@@ -575,7 +575,7 @@ $app->get('/resource/niu/announcement', function() use($app) {
 		$announce = NiuAnnouncement::find(
 		array(
 		"conditions" => "InitiatedAt < $thisTime AND ExpiredAt > $thisTime",
-		"columns" => "ID as id,AnnouncementType as ty, AnnouncementTitle as ac,AnnouncementContent as ac, UrlToGo as ur",
+		"columns" => "ID as id,AnnouncementType as ty, AnnouncementTitle as ti,AnnouncementContent as co, UrlToGo as ur",
 		"limit"		=> "10",
 		"order"		=> "ExpiredAt DESC"
 		));
@@ -583,7 +583,7 @@ $app->get('/resource/niu/announcement', function() use($app) {
 		if( !$announce)
 			$app->sfunc->notModified304($app);
 
-		$app->sfunc->jsonOutput($app, $announce->toArray());
+		$app->sfunc->jsonOutput($app, array('status' => 200, 'ann' => $announce->toArray() ));
 	} catch (\Exception $e) {
 		var_dump($e);
         $app->oauth->catcher($e);
