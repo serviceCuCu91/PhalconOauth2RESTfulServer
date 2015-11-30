@@ -4,7 +4,7 @@ $app->get('/resource/niu/cc/{uuid:[0-9]+}', function($uuid) use($app)
 {
 	try {
 	
-		/*$user = NiuUsrInfo::findFirst("id = $uuid");
+		/ *$user = NiuUsrInfo::findFirst("id = $uuid");
 		
 		if( $user==true)
 		{
@@ -19,7 +19,7 @@ $app->get('/resource/niu/cc/{uuid:[0-9]+}', function($uuid) use($app)
 		else
 		{
 			$app->sfunc->badRequest400($app, "UserNotFound");
-		}*/
+		}* /
 		
 		$BettingSet = NiuGameSetting::findFirst("gskey = 'Niu_BettingSet'")->value;		
 		$DiamondSet = NiuGameSetting::findFirst("gskey = 'Niu_DiamondSet'")->value;
