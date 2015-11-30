@@ -1,5 +1,5 @@
 <?php
-
+/*
 $app->get('/resource/niu/cc/{uuid:[0-9]+}', function($uuid) use($app)
 {
 	try {
@@ -33,7 +33,7 @@ $app->get('/resource/niu/cc/{uuid:[0-9]+}', function($uuid) use($app)
         $app->oauth->catcher($e);
     }
 });
-
+*/
 $app->get('/resource/niu/cashcard/{uuid:[0-9]+}', function($uuid) use($app)
 {
 	try {

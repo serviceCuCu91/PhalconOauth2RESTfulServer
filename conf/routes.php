@@ -27,7 +27,7 @@ $app->get('/', function () use($app) {
 		), JSON_UNESCAPED_UNICODE);
 });
 
-
+/*
 //stay for debug purpose
 $app->get('/backdoor/{uuid:[0-9]+}', function($uuid) use($app) {
 	
@@ -57,7 +57,7 @@ $app->get('/testDB', function() use($app) {
         $app->oauth->catcher($e);
     }
 });
-
+*/
 
 $app->post('/resource', function() use($app)
 {
